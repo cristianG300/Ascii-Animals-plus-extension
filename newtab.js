@@ -470,25 +470,26 @@ const ANIMALS = [
   {
     id: "ducks",
     label: "Duck",
-    swatch: [250, 206, 54],
+    swatch: [255, 212, 32],
     radius: 10,
+    scale: 1.08,
     count: 11,
-    speed: 3.1,
+    speed: 3.0,
     turn: 1.5,
     phaseRate: 6.5,
     mode: "wander",
     feeds: true,
     ambientWater: true,
     foodColor: [228, 186, 102],
-    hint: "Click the water to feed the ducklings",
+    hint: "Click the water to feed the ducks",
     retarget: [2.2, 5.5],
     direction: 0,
     spread: 1,
-    trail: { chars: "~-·'", color: [135, 185, 225], life: 1.05, at: [[-6.5, -1.8], [-6.5, 1.8]] },
+    trail: { chars: "~-·'", color: [145, 195, 235], life: 1.15, at: [[-5.0, -2.1], [-5.0, 2.1]] },
     variants: [
-      { down: [252, 208, 48], head: [255, 222, 74], wing: [226, 174, 30], belly: [255, 238, 136], bill: [248, 128, 28] },
-      { down: [244, 188, 38], head: [252, 206, 62], wing: [214, 152, 24], belly: [252, 224, 114], bill: [242, 112, 24] },
-      { down: [252, 224, 86], head: [255, 234, 112], wing: [224, 192, 54], belly: [255, 244, 168], bill: [246, 138, 44] },
+      { down: [255, 214, 32], head: [255, 226, 56], wing: [228, 172, 20], belly: [255, 240, 128], bill: [255, 118, 18] },
+      { down: [248, 196, 26], head: [255, 212, 46], wing: [216, 154, 18], belly: [255, 228, 112], bill: [248, 104, 18] },
+      { down: [255, 224, 64], head: [255, 234, 92], wing: [226, 188, 36], belly: [255, 244, 156], bill: [252, 128, 28] },
     ],
     onEat(e, t) {
       if (!e.dive) {
@@ -515,17 +516,16 @@ const ANIMALS = [
           e.dive = Math.pow(Math.sin(Math.PI * p), 0.75);
           if (!e.diveSplashed && p > 0.22 && !e.bokeh && !e.leaving) {
             const k = scaleFor(e);
-            const rx = e.x + Math.cos(e.heading) * 5.0 * k * R.cell;
-            const ry = e.y + Math.sin(e.heading) * 5.0 * k * R.cell;
-            addRipple(rx, ry, { dur: 1.0, maxR: 3.2, chars: "o°~", color: [155, 200, 235], alpha: 0.65 });
+            const rx = e.x + Math.cos(e.heading) * 4.5 * k * R.cell;
+            const ry = e.y + Math.sin(e.heading) * 4.5 * k * R.cell;
+            addRipple(rx, ry, { dur: 1.0, maxR: 3.2, chars: "o°~", color: [155, 200, 235], alpha: 0.68 });
             e.diveSplashed = true;
           }
         }
       } else {
         e.dive = 0;
       }
-      e.pad = Math.sin(e.phase);
-      e.sway = e.pad * 0.28 * (0.3 + sway);
+      e.sway = Math.sin(e.phase) * 0.26 * (0.3 + sway);
       e.speedMod = lerp(1, 0.14, e.dive);
       e.phaseMod = lerp(1, 1.45, e.dive);
     },
@@ -534,65 +534,61 @@ const ANIMALS = [
       const d = e.dive || 0;
       const sw = e.sway || 0;
 
-      // head & orange bill (submerges into water ripples during a dive)
-      const hu = lerp(3.4, 4.1, d);
-      const hv = sw * 0.55;
-      const hr = lerp(2.15, 1.65, d);
+      // round rubber-duck head & wide orange bill (submerges during a dive)
+      const hu = lerp(2.3, 3.0, d);
+      const hv = sw * 0.45;
+      const hru = lerp(2.35, 1.85, d);
+      const hrv = lerp(2.45, 1.9, d);
       if (d > 0.48) {
-        const sd = ell(u, v, hu + 0.8, hv, 2.2, 2.0);
+        const sd = ell(u, v, hu + 0.8, hv, 2.3, 2.1);
         if (sd < 1) {
-          if (sd > 0.42) return glyph("°o~", [145, 198, 238], 0.72 * d);
+          if (sd > 0.4) return glyph("°o~", [145, 198, 238], 0.75 * d);
           return hit(mix(P.down, [60, 115, 160], 0.75), 0.55);
         }
       } else {
         const sub = clamp(d / 0.48, 0, 1) * 0.45;
         const vh = v - hv;
         const avh = Math.abs(vh);
-        if (d < 0.35 && ell(u, avh, hu + 0.55, 1.32, 0.58, 0.52) < 1) return hit([20, 18, 16]);
-        const hd = ell(u, vh, hu, 0, hr * 1.04, hr);
+        if (d < 0.35 && ell(u, avh, hu + 0.6, 1.42, 0.74, 0.7) < 1) return hit([18, 16, 16]);
+        const hd = ell(u, vh, hu, 0, hru, hrv);
         if (hd < 1) {
           const c = sub > 0 ? mix(P.head, [75, 130, 175], sub) : P.head;
-          return hit(c, 1, 0.12, hd > 0.72 ? 0.9 : 1.06);
+          const shade = hd < 0.45 ? 1.08 : hd > 0.76 ? 0.88 : 1.0;
+          return hit(c, 1, 0.28, shade);
         }
-        const bu = hu + 1.85;
-        if (u >= hu + 1.1 && ell(u, vh, bu, 0, 1.9, 1.05) < 1) {
+        const bu = hu + 2.0;
+        if (u >= hu + 1.15 && ell(u, vh, bu, 0, 1.85, 1.55) < 1) {
           const c = sub > 0 ? mix(P.bill, [75, 130, 175], sub) : P.bill;
-          return hit(c, 1, 0.18, u > bu + 1.1 ? 0.88 : 1.04);
+          return hit(c, 1, 0.25, u > bu + 1.0 ? 0.9 : 1.05);
         }
       }
 
-      // plump body, folded wing contours, and tipped-up tail tuft
-      const cu = lerp(-0.6, 0.2, d);
-      const ru = lerp(3.85, 3.25, d);
-      const rv = lerp(2.95, 2.75, d);
-      const bv = v - sw * 0.25;
+      // chubby rounded body, molded side wings, and short perky tail
+      const cu = lerp(-0.8, -0.1, d);
+      const ru = lerp(3.55, 3.0, d);
+      const rv = lerp(3.35, 3.05, d);
+      const bv = v - sw * 0.22;
       const abv = Math.abs(bv);
+
+      // side wing contours (protrude gently on the flanks like a rubber duck)
+      const wd = ell(u, abv, cu - 0.1, rv * 0.82, ru * 0.64, 1.05);
+      if (wd < 1) {
+        return hit(P.wing, 1, 0.22, wd > 0.7 ? 0.86 : 1.0);
+      }
 
       const bd = ell(u, bv, cu, 0, ru, rv);
       if (bd < 1) {
-        if (ell(u, abv, cu - 0.3, rv * 0.72, ru * 0.58, 0.85) < 1) {
-          return hit(P.wing, 1, 0.08, bd > 0.75 ? 0.84 : 0.96);
-        }
-        const shade = bd > 0.78 ? 0.82 : abv < 0.9 ? 1.06 : 1.0;
-        return hit(P.down, 1, 0.14, shade);
+        const shade = bd > 0.78 ? 0.84 : bd < 0.35 ? 1.08 : 1.0;
+        return hit(P.down, 1, 0.26, shade);
       }
 
-      const tailTip = lerp(-5.7, -6.5, d);
-      const tailBase = cu - 2.2;
+      const tailTip = lerp(-4.7, -5.5, d);
+      const tailBase = cu - 2.3;
       if (u <= tailBase && u >= tailTip) {
         const tfrac = clamp((u - tailTip) / (tailBase - tailTip), 0, 1);
-        const tw = 0.45 + 1.25 * Math.pow(tfrac, 0.85);
-        if (Math.abs(v - sw * 0.75) < tw) {
-          return hit(d > 0.35 ? P.belly : P.down, 1, 0.1, lerp(0.95, 1.18, d));
-        }
-      }
-
-      // faint paddling webbed feet peeking underwater at the stern
-      if (d < 0.25) {
-        const kickL = Math.max(0, e.pad || 0);
-        const kickR = Math.max(0, -(e.pad || 0));
-        if (ell(u, v, -3.5 - 1.2 * kickL, 2.0, 0.85, 0.65) < 1 || ell(u, v, -3.5 - 1.2 * kickR, -2.0, 0.85, 0.65) < 1) {
-          return hit(P.bill, 0.55, 0, 0.85);
+        const tw = 0.55 + 1.2 * Math.pow(tfrac, 0.8);
+        if (Math.abs(v - sw * 0.65) < tw) {
+          return hit(d > 0.35 ? P.belly : P.down, 1, 0.2, lerp(0.95, 1.18, d));
         }
       }
 
@@ -1273,8 +1269,8 @@ function stepPond(dt, t, sp) {
       dur: rand(1.5, 2.4),
       maxR: rand(3.5, 6.2),
       chars: "~·°",
-      color: [105, 155, 200],
-      alpha: 0.42,
+      color: [115, 170, 215],
+      alpha: 0.5,
     });
     nextPondRipple = t + rand(0.55, 1.35) / activity;
   }
@@ -1295,7 +1291,7 @@ function stepPond(dt, t, sp) {
 function drawWavelets(half) {
   if (!wavelets.length) return;
   const occ = R.occ;
-  const peak = 0.2 + 0.18 * settings.sway;
+  const peak = 0.24 + 0.2 * settings.sway;
   for (const w of wavelets) {
     const i = Math.floor(w.x / R.cell);
     const j = Math.floor(w.y / R.cell);
@@ -1303,7 +1299,7 @@ function drawWavelets(half) {
     if (occ[j * R.cols + i] >= 0) continue;
     const alpha = Math.sin((w.age / w.life) * Math.PI) * peak;
     if (alpha <= 0.02) continue;
-    ctx.fillStyle = `rgba(105,152,196,${alpha.toFixed(3)})`;
+    ctx.fillStyle = `rgba(115,168,212,${alpha.toFixed(3)})`;
     ctx.fillText(w.ch, i * R.cell + half, j * R.cell + half);
   }
 }
