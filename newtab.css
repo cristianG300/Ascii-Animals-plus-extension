@@ -594,7 +594,7 @@ button {
   outline-offset: 2px;
 }
 
-@media (max-width: 760px) {
+@media (max-width: 820px) {
   .picker button {
     padding: 0 8px;
   }

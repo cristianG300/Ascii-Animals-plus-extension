@@ -4,7 +4,7 @@
 
 # ASCII Animals New Tab
 
-**A calm, animated new tab page for Chrome.**
+**A calm, animated new tab page for Chrome (CG's plus version: adding new animals to the tabs).**
 Pixel and ASCII animals drift behind a frosted-glass search bar. Feed the koi, startle the frogs, chase the crabs.
 
 [![Manifest V3](https://img.shields.io/badge/Manifest-V3-4285F4?logo=googlechrome&logoColor=white)](https://developer.chrome.com/docs/extensions/develop/migrate/what-is-mv3)
@@ -36,7 +36,7 @@ Pixel and ASCII animals drift behind a frosted-glass search bar. Feed the koi, s
 
 ## Features
 
-- 🦋 **Seven animated scenes** — butterflies, koi, jellyfish, dragonflies, frogs, cranes and crabs, each with its own movement and personality.
+- 🦋 **Eight animated scenes** — butterflies, koi, jellyfish, dragonflies, frogs, cranes, crabs and ducks, each with its own movement and personality.
 - 🖱️ **Interactive** — click empty space to feed the koi or startle the others. Some animals shy away from your cursor.
 - 🔍 **Glass search bar** — search with your default search engine or type a web address and press Enter.
 - ⭐ **Top sites** — your most visited sites appear as shortcuts under the search bar.
@@ -110,6 +110,7 @@ Click an animal in the bar at the top of the page, or press its number key:
 | `5` | 🐸 Frogs | They leap away. |
 | `6` | 🕊️ Cranes | They veer off course. |
 | `7` | 🦀 Crabs | They bolt away. They also scuttle away from your cursor. |
+| `8` | 🐥 Ducks | Drops food crumbs. Ducklings swim over, dabble underwater to eat, and drift across a rippling pond. |
 
 You can also use the arrow keys, `Home` and `End` while the animal bar has focus.
 
@@ -125,7 +126,7 @@ You can also use the arrow keys, `Home` and `End` while the animal bar has focus
 
 | Shortcut | Action |
 | --- | --- |
-| `1` – `7` | Switch animal |
+| `1` – `8` | Switch animal |
 | `/` | Focus the search box |
 | `Enter` | Search / open the typed address |
 | `Esc` | Close the Tweaks panel |

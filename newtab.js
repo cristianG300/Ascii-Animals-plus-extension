@@ -467,6 +467,138 @@ const ANIMALS = [
       return false;
     },
   },
+  {
+    id: "ducks",
+    label: "Duck",
+    swatch: [250, 206, 54],
+    radius: 10,
+    count: 11,
+    speed: 3.1,
+    turn: 1.5,
+    phaseRate: 6.5,
+    mode: "wander",
+    feeds: true,
+    ambientWater: true,
+    foodColor: [228, 186, 102],
+    hint: "Click the water to feed the ducklings",
+    retarget: [2.2, 5.5],
+    direction: 0,
+    spread: 1,
+    trail: { chars: "~-·'", color: [135, 185, 225], life: 1.05, at: [[-6.5, -1.8], [-6.5, 1.8]] },
+    variants: [
+      { down: [252, 208, 48], head: [255, 222, 74], wing: [226, 174, 30], belly: [255, 238, 136], bill: [248, 128, 28] },
+      { down: [244, 188, 38], head: [252, 206, 62], wing: [214, 152, 24], belly: [252, 224, 114], bill: [242, 112, 24] },
+      { down: [252, 224, 86], head: [255, 234, 112], wing: [224, 192, 54], belly: [255, 244, 168], bill: [246, 138, 44] },
+    ],
+    onEat(e, t) {
+      if (!e.dive) {
+        e.diveAt = t;
+        e.diveDur = rand(1.05, 1.45);
+        e.diveSplashed = false;
+      }
+    },
+    prep(e, sway, t) {
+      if (e.diveAt === undefined) {
+        e.diveAt = t + rand(2.5, 9.5);
+        e.diveDur = rand(1.2, 1.8);
+        e.dive = 0;
+        e.diveSplashed = false;
+      }
+      if (t >= e.diveAt) {
+        const p = (t - e.diveAt) / e.diveDur;
+        if (p >= 1) {
+          e.dive = 0;
+          e.diveAt = t + rand(5.5, 13.5);
+          e.diveDur = rand(1.2, 1.8);
+          e.diveSplashed = false;
+        } else {
+          e.dive = Math.pow(Math.sin(Math.PI * p), 0.75);
+          if (!e.diveSplashed && p > 0.22 && !e.bokeh && !e.leaving) {
+            const k = scaleFor(e);
+            const rx = e.x + Math.cos(e.heading) * 5.0 * k * R.cell;
+            const ry = e.y + Math.sin(e.heading) * 5.0 * k * R.cell;
+            addRipple(rx, ry, { dur: 1.0, maxR: 3.2, chars: "o°~", color: [155, 200, 235], alpha: 0.65 });
+            e.diveSplashed = true;
+          }
+        }
+      } else {
+        e.dive = 0;
+      }
+      e.pad = Math.sin(e.phase);
+      e.sway = e.pad * 0.28 * (0.3 + sway);
+      e.speedMod = lerp(1, 0.14, e.dive);
+      e.phaseMod = lerp(1, 1.45, e.dive);
+    },
+    sample(u, v, e) {
+      const P = e.pal;
+      const d = e.dive || 0;
+      const sw = e.sway || 0;
+
+      // head & orange bill (submerges into water ripples during a dive)
+      const hu = lerp(3.4, 4.1, d);
+      const hv = sw * 0.55;
+      const hr = lerp(2.15, 1.65, d);
+      if (d > 0.48) {
+        const sd = ell(u, v, hu + 0.8, hv, 2.2, 2.0);
+        if (sd < 1) {
+          if (sd > 0.42) return glyph("°o~", [145, 198, 238], 0.72 * d);
+          return hit(mix(P.down, [60, 115, 160], 0.75), 0.55);
+        }
+      } else {
+        const sub = clamp(d / 0.48, 0, 1) * 0.45;
+        const vh = v - hv;
+        const avh = Math.abs(vh);
+        if (d < 0.35 && ell(u, avh, hu + 0.55, 1.32, 0.58, 0.52) < 1) return hit([20, 18, 16]);
+        const hd = ell(u, vh, hu, 0, hr * 1.04, hr);
+        if (hd < 1) {
+          const c = sub > 0 ? mix(P.head, [75, 130, 175], sub) : P.head;
+          return hit(c, 1, 0.12, hd > 0.72 ? 0.9 : 1.06);
+        }
+        const bu = hu + 1.85;
+        if (u >= hu + 1.1 && ell(u, vh, bu, 0, 1.9, 1.05) < 1) {
+          const c = sub > 0 ? mix(P.bill, [75, 130, 175], sub) : P.bill;
+          return hit(c, 1, 0.18, u > bu + 1.1 ? 0.88 : 1.04);
+        }
+      }
+
+      // plump body, folded wing contours, and tipped-up tail tuft
+      const cu = lerp(-0.6, 0.2, d);
+      const ru = lerp(3.85, 3.25, d);
+      const rv = lerp(2.95, 2.75, d);
+      const bv = v - sw * 0.25;
+      const abv = Math.abs(bv);
+
+      const bd = ell(u, bv, cu, 0, ru, rv);
+      if (bd < 1) {
+        if (ell(u, abv, cu - 0.3, rv * 0.72, ru * 0.58, 0.85) < 1) {
+          return hit(P.wing, 1, 0.08, bd > 0.75 ? 0.84 : 0.96);
+        }
+        const shade = bd > 0.78 ? 0.82 : abv < 0.9 ? 1.06 : 1.0;
+        return hit(P.down, 1, 0.14, shade);
+      }
+
+      const tailTip = lerp(-5.7, -6.5, d);
+      const tailBase = cu - 2.2;
+      if (u <= tailBase && u >= tailTip) {
+        const tfrac = clamp((u - tailTip) / (tailBase - tailTip), 0, 1);
+        const tw = 0.45 + 1.25 * Math.pow(tfrac, 0.85);
+        if (Math.abs(v - sw * 0.75) < tw) {
+          return hit(d > 0.35 ? P.belly : P.down, 1, 0.1, lerp(0.95, 1.18, d));
+        }
+      }
+
+      // faint paddling webbed feet peeking underwater at the stern
+      if (d < 0.25) {
+        const kickL = Math.max(0, e.pad || 0);
+        const kickR = Math.max(0, -(e.pad || 0));
+        if (ell(u, v, -3.5 - 1.2 * kickL, 2.0, 0.85, 0.65) < 1 || ell(u, v, -3.5 - 1.2 * kickR, -2.0, 0.85, 0.65) < 1) {
+          return hit(P.bill, 0.55, 0, 0.85);
+        }
+      }
+
+      return false;
+    },
+  },
 ];
 
 const ANIMAL_BY_ID = Object.fromEntries(ANIMALS.map((a) => [a.id, a]));
@@ -631,8 +763,10 @@ let seedCounter = 1;
 let simTime = 0;
 let current = DEFAULTS.animal; // the animal shown in this tab (can differ from the saved pick in random mode)
 const pointer = { x: -1e9, y: -1e9, active: false };
-const foods = []; // koi pellets: { x, y, vx, vy, age, life, tint }
-const ripples = []; // tap feedback: { x, y, age, dur, maxR, chars, color }
+const foods = []; // pellets / crumbs: { x, y, vx, vy, age, life, tint }
+const ripples = []; // tap & pond ripples: { x, y, age, dur, maxR, chars, color, alpha }
+const wavelets = []; // ambient pond water glints: { x, y, vx, vy, age, life, ch }
+let nextPondRipple = 0;
 
 function scaleFor(e) {
   const far = 1 - settings.depth * 0.62;
@@ -701,6 +835,8 @@ function showAnimal(id) {
   entities.forEach((e) => (e.leaving = true));
   bokehs.forEach((b) => (b.leaving = true));
   foods.length = 0;
+  wavelets.length = 0;
+  nextPondRipple = 0;
   syncPopulation();
   showHint();
   return true;
@@ -720,8 +856,8 @@ function tapReach() {
 }
 
 function addRipple(x, y, opts = {}) {
-  ripples.push({ x, y, age: 0, dur: opts.dur ?? 0.9, maxR: opts.maxR ?? 6, chars: opts.chars ?? "·", color: opts.color ?? [200, 210, 230] });
-  if (ripples.length > 24) ripples.shift();
+  ripples.push({ x, y, age: 0, dur: opts.dur ?? 0.9, maxR: opts.maxR ?? 6, chars: opts.chars ?? "·", color: opts.color ?? [200, 210, 230], alpha: opts.alpha ?? 0.8 });
+  if (ripples.length > 36) ripples.shift();
 }
 
 function tap(x, y) {
@@ -781,6 +917,8 @@ function step(dt) {
 
   for (const r of ripples) r.age += dt;
   while (ripples.length && ripples[0].age > ripples[0].dur) ripples.shift();
+
+  stepPond(dt, t, sp);
 
   for (const e of all) {
     const A = e.A;
@@ -849,6 +987,7 @@ function step(dt) {
           e.nextBite = t + rand(0.5, 0.9);
           addRipple(best.x, best.y, { dur: 0.7, maxR: 2.5, chars: "°", color: [170, 200, 230] });
           e.retargetAt = t + rand(0.4, 1.4);
+          if (A.onEat) A.onEat(e, t);
         }
       }
     }
@@ -1064,6 +1203,8 @@ function render(dt) {
     ctx.fillText(trailChars[R.tChar[idx] % trailChars.length], i * R.cell + half, j * R.cell + half);
   }
 
+  drawWavelets(half);
+
   for (let g = 0; g < glyphs.length; g += 8) {
     const i = glyphs[g];
     const j = glyphs[g + 1];
@@ -1086,10 +1227,11 @@ function render(dt) {
   }
 }
 
-// pellets float on the surface, so they sit above the koi
+// pellets and crumbs float on the surface, so they sit above the animals
 const FOOD = [204, 126, 58];
 function drawFood(buf) {
   const occ = R.occ;
+  const fc = ANIMAL_BY_ID[current].foodColor || FOOD;
   for (const f of foods) {
     const i = Math.floor(f.x / R.cell);
     const j = Math.floor(f.y / R.cell);
@@ -1099,11 +1241,70 @@ function drawFood(buf) {
     if (a <= 0.02) continue;
     const idx = j * R.cols + i;
     const p = buf[idx];
-    const r = clamp(lerp(p & 255, FOOD[0] * f.tint, a), 0, 255) | 0;
-    const g = clamp(lerp((p >>> 8) & 255, FOOD[1] * f.tint, a), 0, 255) | 0;
-    const b = clamp(lerp((p >>> 16) & 255, FOOD[2] * f.tint, a), 0, 255) | 0;
+    const r = clamp(lerp(p & 255, fc[0] * f.tint, a), 0, 255) | 0;
+    const g = clamp(lerp((p >>> 8) & 255, fc[1] * f.tint, a), 0, 255) | 0;
+    const b = clamp(lerp((p >>> 16) & 255, fc[2] * f.tint, a), 0, 255) | 0;
     buf[idx] = (255 << 24) | (b << 16) | (g << 8) | r;
     occ[idx] = 32000;
+  }
+}
+
+const WAVE_CHARS = "~-·≈";
+function makeWavelet(initial = false) {
+  return {
+    x: rand(0, R.W),
+    y: rand(0, R.H),
+    vx: rand(0.5, 1.6) * R.cell,
+    vy: rand(-0.25, 0.25) * R.cell,
+    age: initial ? rand(0, 3.0) : 0,
+    life: rand(2.4, 4.6),
+    ch: WAVE_CHARS[(Math.random() * WAVE_CHARS.length) | 0],
+  };
+}
+
+function stepPond(dt, t, sp) {
+  if (!ANIMAL_BY_ID[current].ambientWater) {
+    wavelets.length = 0;
+    return;
+  }
+  const activity = 0.45 + 0.9 * settings.sway;
+  if (t >= nextPondRipple) {
+    addRipple(rand(0, R.W), rand(0, R.H), {
+      dur: rand(1.5, 2.4),
+      maxR: rand(3.5, 6.2),
+      chars: "~·°",
+      color: [105, 155, 200],
+      alpha: 0.42,
+    });
+    nextPondRipple = t + rand(0.55, 1.35) / activity;
+  }
+  const area = (window.innerWidth * window.innerHeight) / (1440 * 900);
+  const want = clamp(Math.round(28 * area), 12, 50);
+  while (wavelets.length < want) wavelets.push(makeWavelet(true));
+  if (wavelets.length > want) wavelets.length = want;
+  const drift = dt * (0.35 + 0.65 * sp) * (0.4 + 0.8 * settings.sway);
+  for (let idx = 0; idx < wavelets.length; idx++) {
+    const w = wavelets[idx];
+    w.age += dt;
+    w.x += w.vx * drift;
+    w.y += w.vy * drift;
+    if (w.age >= w.life || w.x > R.W || w.y < 0 || w.y > R.H) wavelets[idx] = makeWavelet(false);
+  }
+}
+
+function drawWavelets(half) {
+  if (!wavelets.length) return;
+  const occ = R.occ;
+  const peak = 0.2 + 0.18 * settings.sway;
+  for (const w of wavelets) {
+    const i = Math.floor(w.x / R.cell);
+    const j = Math.floor(w.y / R.cell);
+    if (i < 0 || j < 0 || i >= R.cols || j >= R.rows) continue;
+    if (occ[j * R.cols + i] >= 0) continue;
+    const alpha = Math.sin((w.age / w.life) * Math.PI) * peak;
+    if (alpha <= 0.02) continue;
+    ctx.fillStyle = `rgba(105,152,196,${alpha.toFixed(3)})`;
+    ctx.fillText(w.ch, i * R.cell + half, j * R.cell + half);
   }
 }
 
@@ -1111,7 +1312,7 @@ function drawRipples(half) {
   for (const rp of ripples) {
     const p = clamp(rp.age / rp.dur, 0, 1);
     const radius = 0.6 + rp.maxR * (1 - Math.pow(1 - p, 2.2));
-    const alpha = Math.pow(1 - p, 1.3) * 0.8;
+    const alpha = Math.pow(1 - p, 1.3) * (rp.alpha ?? 0.8);
     if (alpha <= 0.02) continue;
     const ci = rp.x / R.cell;
     const cj = rp.y / R.cell;
